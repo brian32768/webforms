@@ -6,13 +6,14 @@ from config import Config
 
 import os
 from arcgis.gis import GIS
+import pandas as pd
 
 from datetime import datetime
 from pytz import timezone
 from tzlocal import get_localzone
 
 rest = "https://delta.co.clatsop.or.us/server/rest/services/TESTING_Brian/SDE_inventory_sandbox/FeatureServer"
-portal = "https://delta.co.clatsop.or.us/portal"
+portalUrl = "https://delta.co.clatsop.or.us/portal"
 servicename = 'COVID19 Clatsop County Test Results'
 layername = 'covid19_clatsop_test_results'
 
@@ -36,12 +37,48 @@ def thanks():
 def fail(e=""):
     return render_template("fail.html", error=error)
 
+def connect(portal):
+    global error
+    # Amusingly the GIS search function is sloppy and returns several...
+    # there does not appear to be an exact match option.
+    search_result = []
+    try:
+        search_result = portal.content.search(servicename,
+                                              item_type="Feature Service")
+        if len(search_result) < 1:
+            error = "Feature service '%s' not found." % layername
+            return redirect("/fail")
+    except Exception as e:
+        print("Connection to feature service failed.", e)
+        error = e
+        return redirect('/fail')
+
+    # Search for the correct Feature Service
+    layer = None
+    for item in search_result:
+        #print(layername, item.title)
+        if layername == item.title:
+            layer = item.layers[0]
+    if not layer:
+        print("Connection to feature layer failed.")
+        return redirect('/fail')
+
+    return layer
+
 @app.route('/', methods=['GET', 'POST'])
 def update_cases():
     global error
 
     form = CasesForm()
 
+    try:
+        portal = GIS(portalUrl, Config.PORTAL_USER, Config.PORTAL_PASSWORD)
+    except Exception as e:
+        print("Connection to portal failed.", e)
+        error = e
+        return redirect('/fail')
+    layer = connect(portal)
+    
     if form.validate_on_submit():
 
         try:
@@ -71,31 +108,6 @@ def update_cases():
             error = e
             return redirect("/fail")
 
-        # Amusingly the GIS search function is sloppy and returns several...
-        # there does not appear to be an exact match option.
-        search_result = []
-        try:
-            delta = GIS(portal, Config.PORTAL_USER, Config.PORTAL_PASSWORD)
-            search_result = delta.content.search(servicename,
-                item_type="Feature Service")
-            if len(search_result) < 1:
-                error = "Feature service '%s' not found." % layername
-                return redirect("/fail")
-        except Exception as e:
-            print("Connection to feature service failed.", e)
-            error = e
-            return redirect("/fail")
-
-        # Search for the correct Feature Service
-        layer = None
-        for item in search_result:
-            #print(layername, item.title)
-            if layername == item.title:
-                layer = item.layers[0]
-        if not layer:
-            print("Connection to feature layer failed.")
-            return redirect("/fail")
-
         results = ''
         try:
             results = layer.edit_features(adds=[n])
@@ -105,16 +117,31 @@ def update_cases():
             print("Write failed", e, results)
             return redirect("/fail")
 
-        del delta  # release connection
         return redirect('/thanks')
 
-    else :
-        print("form errors: ", form.errors)
-        flash(form.errors)
+    try:
+        # Try to populate the form with the newest values
+        row = pd.DataFrame.spatial.from_layer(layer).sort_values(
+            by=['utc_date'], ascending=False).head(1)
+        s = row.iloc[0]
+
+        old_date = s['utc_date']
+        print(old_date.strftime(time_format))
+        form.positive.data =  s['positive']
+        form.negative.data =  s['negative']
+        form.recovered.data = s['recovered']
+        form.deaths.data =    s['deaths']
+        #form.editor.data = s['editor']
+
+    except Exception as e:
+        print("Reading old data failed.", e)
+        pass
 
     now = datetime.now()
     ds = now.strftime(time_format)
     form.datestamp.data = ds
+
+    del portal
 
     return render_template('form.html', form=form)
 
