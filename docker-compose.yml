@@ -9,6 +9,7 @@ services:
       NETWORK_ACCESS: internal
       LETSENCRYPT_HOST: ${FLASK_HOST}
       LETSENCRYPT_MAIL: ${MY_EMAIL}
+      PORTAL_URL: ${PORTAL_URL}
     volumes:
       - "/etc/localtime:/etc/localtime:ro"
       - "/etc/timezone:/etc/timezone:ro"

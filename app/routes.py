@@ -12,10 +12,12 @@ from datetime import datetime
 from pytz import timezone
 from tzlocal import get_localzone
 
-rest = "https://delta.co.clatsop.or.us/server/rest/services/TESTING_Brian/SDE_inventory_sandbox/FeatureServer"
-portalUrl = "https://delta.co.clatsop.or.us/portal"
-servicename = 'COVID19 Clatsop County Test Results'
-layername = 'covid19_clatsop_test_results'
+VERSION = 'webforms 1.0'
+
+portal_url      = Config.PORTAL_URL
+feature_layer   = Config.PORTAL_FEATURE_LAYER
+portal_user     = Config.PORTAL_USER
+portal_password = Config.PORTAL_PASSWORD
 
 time_format = "%m/%d/%Y %H:%M"
 
@@ -37,33 +39,20 @@ def thanks():
 def fail(e=""):
     return render_template("fail.html", error=error)
 
-def connect(portal):
-    global error
+def connect(portal, feature_layer):
     # Amusingly the GIS search function is sloppy and returns several...
     # there does not appear to be an exact match option.
-    search_result = []
-    try:
-        search_result = portal.content.search(servicename,
-                                              item_type="Feature Service")
-        if len(search_result) < 1:
-            error = "Feature service '%s' not found." % layername
-            return redirect("/fail")
-    except Exception as e:
-        print("Connection to feature service failed.", e)
-        error = e
-        return redirect('/fail')
+    search_result = portal.content.search(query=feature_layer,
+                                          item_type="Feature Layer Collection")
+    if len(search_result) < 1:
+        error = "Feature service '%s' not found." % feature_layer
+        raise Exception(error)
 
     # Search for the correct Feature Service
-    layer = None
-    for item in search_result:
-        #print(layername, item.title)
-        if layername == item.title:
-            layer = item.layers[0]
-    if not layer:
-        print("Connection to feature layer failed.")
-        return redirect('/fail')
+    layercollection = [
+        item for item in search_result if item.title == feature_layer][0]
 
-    return layer
+    return layercollection.layers[0]
 
 @app.route('/', methods=['GET', 'POST'])
 def update_cases():
@@ -72,14 +61,21 @@ def update_cases():
     form = CasesForm()
 
     try:
-        portal = GIS(portalUrl, Config.PORTAL_USER, Config.PORTAL_PASSWORD)
+        portal = GIS(portal_url, portal_user, portal_password)
     except Exception as e:
         print("Connection to portal failed.", e)
         error = e
         return redirect('/fail')
-    layer = connect(portal)
-    
+    try:
+        layer = connect(portal, feature_layer)
+    except Exception as e:
+        print("Connection to feature service failed.", e)
+        error = e
+        return redirect('/fail')
+
     if form.validate_on_submit():
+
+        #session['name'] = form.name.data
 
         try:
             local = parsetime(form.datestamp.data)
@@ -91,13 +87,18 @@ def update_cases():
 
         try:
             n = {"attributes": { 
-                        "utc_date":    utc,
-                        "positive":    int(form.positive.data),
-                        "negative":    int(form.negative.data),
-                        "total_tests": int(form.positive.data) + int(form.negative.data),
-                        "recovered":   int(form.recovered.data),
-                        "deaths":      int(form.deaths.data),
-                        "editor":      "EMD",
+                        "utc_date":        utc,
+                        "last_update":     utc,
+                        'name':            'Clatsop',
+                        "total_cases":     int(float(form.positive.data)),
+                        "total_negative":  int(float(form.negative.data)),
+                        "total_tests":     int(float(form.positive.data)) 
+                                         + int(float(form.negative.data)),
+                        "total_recovered": int(float(form.recovered.data)),
+                        "total_deaths":    int(float(form.deaths.data)),
+
+                        "source":          VERSION,
+                        "editor":          "EMD",
                     },
                 "geometry": {
                     "x": -123.74, "y": 46.09  # county centroid, more or less
@@ -121,17 +122,25 @@ def update_cases():
 
     try:
         # Try to populate the form with the newest values
-        row = pd.DataFrame.spatial.from_layer(layer).sort_values(
-            by=['utc_date'], ascending=False).head(1)
-        s = row.iloc[0]
+        df = pd.DataFrame.spatial.from_layer(layer)
+        #print(df)
+        clatsop_df = df[df.name == 'Clatsop']
+        #print(clatsop_df)
+        newest = clatsop_df.sort_values(by=['utc_date'], ascending=False).head(1)
+        #print(newest)
+        s = newest.iloc[0]
+        print(s)
 
-        old_date = s['utc_date']
-        print(old_date.strftime(time_format))
-        form.positive.data =  s['positive']
-        form.negative.data =  s['negative']
-        form.recovered.data = s['recovered']
-        form.deaths.data =    s['deaths']
-        #form.editor.data = s['editor']
+        # Force the old date into UTC
+        old_date = s['utc_date'].replace(tzinfo=timezone('UTC'))
+        # Show the old date in the local TZ
+        form.old_date = "(previous %s)" % old_date.astimezone(timezone('America/Los_Angeles')).strftime(time_format)
+
+        form.positive.data =  s['total_cases']
+        form.negative.data =  s['total_negative']
+        form.recovered.data = s['total_recovered']
+        form.deaths.data =    s['total_deaths']
+        #form.editor.data =    s['editor']
 
     except Exception as e:
         print("Reading old data failed.", e)
