@@ -4,14 +4,14 @@ services:
     container_name: webforms
     env_file: .env
     environment:
-#      VIRTUAL_HOST: ${FLASK_HOST}
+      VIRTUAL_HOST: ${FLASK_HOST}
       VIRTUAL_PORT: ${FLASK_PORT}
       NETWORK_ACCESS: internal
-#      LETSENCRYPT_HOST: ${MAPPROXY_VIRTUAL_HOST}
-#      LETSENCRYPT_MAIL: ${MY_EMAIL}
-#    volumes:
-#      - "/etc/localtime:/etc/localtime:ro"
-#      - "/etc/timezone:/etc/timezone:ro"
+      LETSENCRYPT_HOST: ${FLASK_HOST}
+      LETSENCRYPT_MAIL: ${MY_EMAIL}
+    volumes:
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/etc/timezone:/etc/timezone:ro"
     restart: unless-stopped
     networks:
       proxy_net:
