@@ -52,31 +52,32 @@ class PPEForm(FlaskForm):
     # NB IntegerField() would not accept 0 as input!!
     # NumberRange is not working the way I expect
 
-    n95 = StringField(u'n95', default="0", validators=[
-                      DataRequired(message="enter n95 supply")])
-    n95_burn = StringField(u'n95_burn', default="0", validators=[
-        DataRequired(message="enter n95 burn rate")])
+    n95 = StringField(u'n95')
+    n95_burn = StringField(u'n95_burn')
 
-    mask = StringField(u'mask', default="0", validators=[
-                      DataRequired(message="enter surgical mask supply")])
-    mask_burn = StringField(u'mask_burn', default="0", validators=[
-        DataRequired(message="enter surgical mask burn rate")])
+    mask = StringField(u'mask')
+    mask_burn = StringField(u'mask_burn')
 
-    shield = StringField(u'shield', default="0", validators=[
-                      DataRequired(message="enter shield supply")])
-    shield_burn = StringField(u'shield_burn', default="0", validators=[
-        DataRequired(message="enter shield burn rate")])
+    shield = StringField(u'shield')
+    shield_burn = StringField(u'shield_burn')
 
-    glove = StringField(u'glove', default="0", validators=[
-                      DataRequired(message="enter glove supply")])
-    glove_burn = StringField(u'glove_burn', default="0", validators=[
-        DataRequired(message="enter glove burn rate")])
+    glove = StringField(u'glove')
+    glove_burn = StringField(u'glove_burn')
 
-    gown = StringField(u'gown', default="0", validators=[
-                      DataRequired(message="enter gown supply")])
-    gown_burn = StringField(u'gown_burn', default="0", validators=[
-        DataRequired(message="enter gown burn rate")])
+    gown = StringField(u'gown')
+    gown_burn = StringField(u'gown_burn')
+
+    sanitizer = StringField(u'sanitizer')
+    sanitizer_burn = StringField(u'sanitizer_burn')
+
+    goggle = StringField(u'goggle')
+    goggle_burn = StringField(u'goggle_burn')
+
+    coverall = StringField(u'coverall')
+    coverall_burn = StringField(u'coverall_burn')
 
     submit = SubmitField(u"Submit")
+
+
 
 # That's all!

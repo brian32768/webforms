@@ -101,12 +101,12 @@ def update_cases():
                 "utc_date":        utc,
                 "last_update":     utc,
                 'name':            'Clatsop',
-                "total_cases":     int(float(form.positive.data)),
-                "total_negative":  int(float(form.negative.data)),
-                "total_tests":     int(float(form.positive.data))
-                + int(float(form.negative.data)),
-                "total_recovered": int(float(form.recovered.data)),
-                "total_deaths":    int(float(form.deaths.data)),
+                "total_cases":     s2i(form.positive.data),
+                "total_negative":  s2i(form.negative.data),
+                "total_tests":     s2i(form.positive.data)
+                + s2i(form.negative.data),
+                "total_recovered": s2i(form.recovered.data),
+                "total_deaths":    s2i(form.deaths.data),
 
                 "source":          VERSION,
                 "editor":          "EMD",
@@ -167,10 +167,35 @@ def update_cases():
 
     return render_template('cases.html', form=form)
 
+def s2i(s):
+    """ Convert a string to an integer even if it has + and , in it. """
+    if s == None or s == '':
+        return None
+    if type(s) == type(0):
+        # This is already an integer
+        return s
+    if s:
+        return int(float(s.replace(',', '')))
+    return None
 
-@app.route('/ppe', methods=['GET', 'POST'])
-def update_ppe():
+def s2f(s):
+    """ Convert a string to a float even if it has + and , in it. """
+    if s == None or s == '':
+        return None
+    if type(s) == type(0.0) or type(s) == type(0):
+        # Already a number
+        return s
+    if s:
+        return float(s.replace(',', ''))
+    return None
+
+@app.route('/ppe/<facility>', methods=['GET', 'POST'])
+def update_ppe(facility="Clatsop"):
     global error
+
+    if not facility in ['Clatsop', 'PSH', 'CMH']:
+        error = 'Could not recognize the facilty name'
+        return redirect('/fail')
 
     form = PPEForm()
 
@@ -206,30 +231,41 @@ def update_ppe():
                 'facility':        'Clatsop',
 
                 "n95_date":        utc,
-                "n95":             int(float(form.n95.data)),
-                "n95_burn":        int(float(form.n95_burn.data)),
+                "n95":             s2i(form.n95.data),
+                "n95_burn":        s2i(form.n95_burn.data),
 
                 "mask_date":       utc,
-                "mask":            int(float(form.mask.data)),
-                "mask_burn":       int(float(form.mask_burn.data)),
+                "mask":            s2i(form.mask.data),
+                "mask_burn":       s2i(form.mask_burn.data),
 
                 "shield_date":     utc,
-                "shield":          int(float(form.shield.data)),
-                "shield_burn":     int(float(form.shield_burn.data)),
+                "shield":          s2i(form.shield.data),
+                "shield_burn":     s2i(form.shield_burn.data),
 
                 "glove_date":      utc,
-                "glove":           int(float(form.glove.data)),
-                "glove_burn":      int(float(form.glove_burn.data)),
+                "glove":           s2i(form.glove.data),
+                "glove_burn":      s2i(form.glove_burn.data),
 
                 "gown_date":       utc,
-                "gown":            int(float(form.gown.data)),
-                "gown_burn":       int(float(form.gown_burn.data)),
+                "gown":            s2i(form.gown.data),
+                "gown_burn":       s2i(form.gown_burn.data),
+
+                "coverall_date":   utc,
+                "coverall":        s2i(form.coverall.data),
+                "coverall_burn":   s2i(form.coverall_burn.data),
+
+                "sanitizer_date":  utc,
+                "sanitizer":       s2f(form.sanitizer.data),
+                "sanitizer_burn":  s2f(form.sanitizer_burn.data),
+
+                "goggle_date":     utc,
+                "goggle":          s2i(form.goggle.data),
+                "goggle_burn":     s2i(form.goggle_burn.data),
 
             },
                 "geometry": {
                 "x": -123.74, "y": 46.09  # county centroid, more or less
-            }
-            }
+            }}
         except Exception as e:
             print("Attribute error.", e)
             error = e
@@ -238,7 +274,7 @@ def update_ppe():
         results = ''
         try:
             results = layer.edit_features(adds=[n])
-            print(results['addResults'][0]['success'])
+            #print(results['addResults'][0]['success'])
         except Exception as e:
             error = e
             print("Write failed", e, results)
@@ -251,11 +287,11 @@ def update_ppe():
         df = pd.DataFrame.spatial.from_layer(layer)
         #print(df)
 
-        clatsop_df = df[df.facility == 'Clatsop']
-        print(clatsop_df)
+        clatsop_df = df[df.facility == facility]
+        #print(clatsop_df)
         newest = clatsop_df.sort_values(
             by=['utc_date'], ascending=False).head(1)
-        print(newest)
+        #print(newest)
         s = newest.iloc[0]
         print(s)
 
@@ -278,6 +314,13 @@ def update_ppe():
         form.gown.data = s['gown']
         form.gown_burn.data = s['gown_burn']
 
+        form.sanitizer.data = s['sanitizer']
+        form.sanitizer_burn.data = s['sanitizer_burn']
+        form.goggle.data = s['goggle']
+        form.goggle_burn.data = s['goggle_burn']
+        form.coverall.data = s['coverall']
+        form.coverall_burn.data = s['coverall_burn']
+
     except Exception as e:
         print("Reading old data failed.", e)
         pass
@@ -288,6 +331,11 @@ def update_ppe():
 
     del portal
 
-    return render_template('ppe.html', form=form)
+    html = 'ppe_hoscap.html'
+    if facility == 'Clatsop':
+        html = 'ppe.html'
+
+    return render_template(html, form=form)
+
 
 # That's all!
