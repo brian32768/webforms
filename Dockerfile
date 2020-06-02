@@ -11,6 +11,7 @@ COPY requirements.txt ./
 # This will upgrade conda, so the fact that the base image is old does not matter
 # flask-bootstrap needs hugo
 #
+RUN conda update -n base -c defaults conda
 RUN conda config --add channels conda-forge &&\
     conda config --add channels hugo &&\
     conda config --add channels Esri &&\
