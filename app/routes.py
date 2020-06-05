@@ -23,9 +23,11 @@ cases_title = Config.CASES_TITLE
 ppe_layer   = Config.PPE_LAYER
 ppe_title   = Config.PPE_TITLE
 
+county_centroid = {"x": -123.74, "y": 46.09}
+
 time_format = "%m/%d/%Y %H:%M"
 
-error = "ERROR 99999" # yes it's a global
+error = "ERROR 99999" # yes it's a global variable, sorry
 
 def parsetime(s) :
     """ Parse a time string and return a datetime object. """
@@ -48,15 +50,18 @@ def connect(portal, layername, layertitle):
     # there does not appear to be an exact match option.
     search_result = portal.content.search(query=layername,
                                           item_type="Feature Layer Collection")
-    print(search_result)
+    #print(search_result)
     if len(search_result) < 1:
         error = "Feature service '%s' not found." % layername
         raise Exception(error)
 
     # Search for the correct Feature Service
-    layercollection = [
-        item for item in search_result if item.title == layertitle][0]
-    print(layercollection)
+    try:
+        layercollection = [
+            item for item in search_result if item.title == layertitle][0]
+    except IndexError:
+        print(layercollection)
+        raise Exception('Layer not found. "%s"' % layertitle)
 
     return layercollection.layers[0]
 
@@ -111,9 +116,7 @@ def update_cases():
                 "source":          VERSION,
                 "editor":          "EMD",
             },
-                "geometry": {
-                "x": -123.74, "y": 46.09  # county centroid, more or less
-            }
+                "geometry": county_centroid
             }
         except Exception as e:
             print("Attribute error.", e)
@@ -122,8 +125,8 @@ def update_cases():
 
         results = ''
         try:
+            print(layer, n)
             results = layer.edit_features(adds=[n])
-            print(results['addResults'][0]['success'])
         except Exception as e:
             error = e
             print("Write failed", e, results)
@@ -141,7 +144,7 @@ def update_cases():
             by=['utc_date'], ascending=False).head(1)
         #print(newest)
         s = newest.iloc[0]
-        print(s)
+        #print(s)
 
         # Force the old date into UTC
         old_date = s['utc_date'].replace(tzinfo=timezone('UTC'))
@@ -162,8 +165,6 @@ def update_cases():
     now = datetime.now()
     ds = now.strftime(time_format)
     form.datestamp.data = ds
-
-    del portal
 
     return render_template('cases.html', form=form)
 
@@ -189,6 +190,14 @@ def s2f(s):
         return float(s.replace(',', ''))
     return None
 
+def percent(n,d):
+    if n and d:
+        fn = s2f(n)
+        fd = s2f(d)
+        if fd != 0:
+            return round(fn * 100.0 / fd, 0)
+    return 0
+
 @app.route('/ppe/<facility>', methods=['GET', 'POST'])
 def update_ppe(facility="Clatsop"):
     global error
@@ -213,10 +222,12 @@ def update_ppe(facility="Clatsop"):
         return redirect('/fail')
 
     if form.validate_on_submit():
+    # We have INPUT and now we're going to SAVE it.
 
         #session['name'] = form.name.data
 
         try:
+            # The form has local time and we need UTC
             local = parsetime(form.datestamp.data)
             utc = local2utc(local).strftime(time_format)
         except Exception as e:
@@ -227,45 +238,60 @@ def update_ppe(facility="Clatsop"):
         try:
             n = {"attributes": {
                 "utc_date":        utc,
-                "editor":          "EMD",
+                "editor":          VERSION,
                 'facility':        'Clatsop',
 
                 "n95_date":        utc,
                 "n95":             s2i(form.n95.data),
                 "n95_burn":        s2i(form.n95_burn.data),
+                "n95_goal":        s2i(form.n95_goal.data),
+                "n95_complete":    percent(form.n95.data, form.n95_goal.data),
 
                 "mask_date":       utc,
                 "mask":            s2i(form.mask.data),
                 "mask_burn":       s2i(form.mask_burn.data),
+                "mask_goal":       s2i(form.mask_goal.data),
+                "mask_complete":   percent(form.mask.data, form.mask_goal.data),
 
                 "shield_date":     utc,
-                "shield":          s2i(form.shield.data),
-                "shield_burn":     s2i(form.shield_burn.data),
+                "shield":          s2f(form.shield.data),
+                "shield_burn":     s2f(form.shield_burn.data),
+                "shield_goal":     s2f(form.shield_goal.data),
+                "shield_complete": percent(form.shield.data, form.shield_goal.data),
 
                 "glove_date":      utc,
                 "glove":           s2i(form.glove.data),
                 "glove_burn":      s2i(form.glove_burn.data),
+                "glove_goal":      s2i(form.glove_goal.data),
+                "glove_complete":  percent(form.glove.data, form.glove_goal.data),
 
                 "gown_date":       utc,
                 "gown":            s2i(form.gown.data),
                 "gown_burn":       s2i(form.gown_burn.data),
+                "gown_goal":       s2i(form.gown_goal.data),
+                "gown_complete":   percent(form.gown.data, form.gown_goal.data),
 
                 "coverall_date":   utc,
                 "coverall":        s2i(form.coverall.data),
                 "coverall_burn":   s2i(form.coverall_burn.data),
+                "coverall_goal":   s2i(form.coverall_goal.data),
+                "coverall_complete": percent(form.coverall.data, form.coverall_goal.data),
 
                 "sanitizer_date":  utc,
                 "sanitizer":       s2f(form.sanitizer.data),
                 "sanitizer_burn":  s2f(form.sanitizer_burn.data),
+                "sanitizer_goal":  s2f(form.sanitizer_goal.data),
+                "sanitizer_complete":  percent(form.sanitizer.data, form.sanitizer_goal.data),
 
                 "goggle_date":     utc,
                 "goggle":          s2i(form.goggle.data),
                 "goggle_burn":     s2i(form.goggle_burn.data),
+                "goggle_goal":     s2i(form.goggle_goal.data),
+                "goggle_complete": percent(form.goggle.data, form.goggle_goal.data),
 
             },
-                "geometry": {
-                "x": -123.74, "y": 46.09  # county centroid, more or less
-            }}
+                "geometry": county_centroid
+            }
         except Exception as e:
             print("Attribute error.", e)
             error = e
@@ -273,14 +299,16 @@ def update_ppe(facility="Clatsop"):
 
         results = ''
         try:
+            #print(layer, n)
             results = layer.edit_features(adds=[n])
-            #print(results['addResults'][0]['success'])
         except Exception as e:
-            error = e
-            print("Write failed", e, results)
+            error = str(e) + ' -- make sure the layer is owned by sde not DBO'
+            print("Write failed", e)
             return redirect("/fail")
 
         return redirect('/thanks')
+
+    # We need input so we're sending the form.
 
     try:
         # Try to populate the form with the newest values
@@ -305,31 +333,52 @@ def update_ppe(facility="Clatsop"):
 
         form.n95.data = s['n95']
         form.n95_burn.data = s['n95_burn']
+        form.n95_goal.data = s['n95_goal']
+        form.n95_complete.data = s['n95_complete']
+
         form.mask.data = s['mask']
         form.mask_burn.data = s['mask_burn']
+        form.mask_goal.data = s['mask_goal']
+        form.mask_complete.data = s['mask_complete']
+
         form.shield.data = s['shield']
         form.shield_burn.data = s['shield_burn']
+        form.shield_goal.data = s['shield_goal']
+        form.shield_complete.data = s['shield_complete']
+
         form.glove.data = s['glove']
         form.glove_burn.data = s['glove_burn']
+        form.glove_goal.data = s['glove_goal']
+        form.glove_complete.data = s['glove_complete']
+
         form.gown.data = s['gown']
         form.gown_burn.data = s['gown_burn']
+        form.gown_goal.data = s['gown_goal']
+        form.gown_complete.data = s['gown_complete']
 
         form.sanitizer.data = s['sanitizer']
         form.sanitizer_burn.data = s['sanitizer_burn']
+        form.sanitizer_goal.data = s['sanitizer_goal']
+        form.sanitizer_complete.data = s['sanitizer_complete']
+
         form.goggle.data = s['goggle']
         form.goggle_burn.data = s['goggle_burn']
+        form.goggle_goal.data = s['goggle_goal']
+        form.goggle_complete.data = s['goggle_complete']
+
         form.coverall.data = s['coverall']
         form.coverall_burn.data = s['coverall_burn']
+        form.coverall_goal.data = s['coverall_goal']
+        form.coverall_complete.data = s['coverall_complete']
 
     except Exception as e:
         print("Reading old data failed.", e)
         pass
 
+    # Show the current local time in the form.
     now = datetime.now()
     ds = now.strftime(time_format)
     form.datestamp.data = ds
-
-    del portal
 
     html = 'ppe_hoscap.html'
     if facility == 'Clatsop':

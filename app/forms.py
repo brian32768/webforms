@@ -54,30 +54,45 @@ class PPEForm(FlaskForm):
 
     n95 = StringField(u'n95')
     n95_burn = StringField(u'n95_burn')
+    n95_goal = StringField(u'n95_goal')
+    n95_complete = StringField(u'n95_complete')
 
     mask = StringField(u'mask')
     mask_burn = StringField(u'mask_burn')
+    mask_goal = StringField(u'mask_goal')
+    mask_complete = StringField(u'mask_complete')
 
     shield = StringField(u'shield')
     shield_burn = StringField(u'shield_burn')
+    shield_goal = StringField(u'shield_goal')
+    shield_complete = StringField(u'shield_complete')
 
     glove = StringField(u'glove')
     glove_burn = StringField(u'glove_burn')
+    glove_goal = StringField(u'glove_goal')
+    glove_complete = StringField(u'glove_complete')
 
     gown = StringField(u'gown')
     gown_burn = StringField(u'gown_burn')
+    gown_goal = StringField(u'gown_goal')
+    gown_complete = StringField(u'gown_complete')
 
     sanitizer = StringField(u'sanitizer')
     sanitizer_burn = StringField(u'sanitizer_burn')
+    sanitizer_goal = StringField(u'sanitizer_goal')
+    sanitizer_complete = StringField(u'sanitizer_complete')
 
     goggle = StringField(u'goggle')
     goggle_burn = StringField(u'goggle_burn')
+    goggle_goal = StringField(u'goggle_goal')
+    goggle_complete = StringField(u'goggle_complete')
 
     coverall = StringField(u'coverall')
     coverall_burn = StringField(u'coverall_burn')
+    coverall_goal = StringField(u'coverall_goal')
+    coverall_complete = StringField(u'coverall_complete')
 
     submit = SubmitField(u"Submit")
-
 
 
 # That's all!
