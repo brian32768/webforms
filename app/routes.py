@@ -12,7 +12,7 @@ from datetime import datetime
 from pytz import timezone
 from tzlocal import get_localzone
 
-VERSION = 'webforms 1.1'
+VERSION = 'webforms 1.2'
 
 portal_url      = Config.PORTAL_URL
 portal_user     = Config.PORTAL_USER
@@ -138,9 +138,9 @@ def update_cases():
         # Try to populate the form with the newest values
         df = pd.DataFrame.spatial.from_layer(layer)
         #print(df)
-        clatsop_df = df[df.name == 'Clatsop']
-        #print(clatsop_df)
-        newest = clatsop_df.sort_values(
+        ppe_df = df[df.name == 'Clatsop']
+        #print(ppe_df)
+        newest = ppe_df.sort_values(
             by=['utc_date'], ascending=False).head(1)
         #print(newest)
         s = newest.iloc[0]
@@ -227,63 +227,74 @@ def update_ppe(facility="Clatsop"):
         #session['name'] = form.name.data
 
         try:
-            # The form has local time and we need UTC
+            # The form has local times and we need UTC
             local = parsetime(form.datestamp.data)
-            utc = local2utc(local).strftime(time_format)
+            utc_now = local2utc(local).strftime(time_format)
         except Exception as e:
             print("Time format is confusing to me.", e)
             error = e
             return redirect("/fail")
 
+        if facility == 'Clatsop':
+            utc_updated = utc_now
+        else:
+            try:
+                # The form has local times and we need UTC
+                local = parsetime(form.updated.data)
+                utc_updated = local2utc(local).strftime(time_format)
+            except Exception as e:
+                print("Time format is confusing to me.", e)
+                utc_updated = utc_now
+
         try:
             n = {"attributes": {
-                "utc_date":        utc,
+                "utc_date":        utc_now,
                 "editor":          VERSION,
-                'facility':        'Clatsop',
+                'facility':        facility,
 
-                "n95_date":        utc,
+                "n95_date":        utc_updated,
                 "n95":             s2i(form.n95.data),
                 "n95_burn":        s2i(form.n95_burn.data),
                 "n95_goal":        s2i(form.n95_goal.data),
                 "n95_complete":    percent(form.n95.data, form.n95_goal.data),
 
-                "mask_date":       utc,
+                "mask_date":       utc_updated,
                 "mask":            s2i(form.mask.data),
                 "mask_burn":       s2i(form.mask_burn.data),
                 "mask_goal":       s2i(form.mask_goal.data),
                 "mask_complete":   percent(form.mask.data, form.mask_goal.data),
 
-                "shield_date":     utc,
+                "shield_date":     utc_updated,
                 "shield":          s2f(form.shield.data),
                 "shield_burn":     s2f(form.shield_burn.data),
                 "shield_goal":     s2f(form.shield_goal.data),
                 "shield_complete": percent(form.shield.data, form.shield_goal.data),
 
-                "glove_date":      utc,
+                "glove_date":      utc_updated,
                 "glove":           s2i(form.glove.data),
                 "glove_burn":      s2i(form.glove_burn.data),
                 "glove_goal":      s2i(form.glove_goal.data),
                 "glove_complete":  percent(form.glove.data, form.glove_goal.data),
 
-                "gown_date":       utc,
+                "gown_date":       utc_updated,
                 "gown":            s2i(form.gown.data),
                 "gown_burn":       s2i(form.gown_burn.data),
                 "gown_goal":       s2i(form.gown_goal.data),
                 "gown_complete":   percent(form.gown.data, form.gown_goal.data),
 
-                "coverall_date":   utc,
+                "coverall_date":   utc_updated,
                 "coverall":        s2i(form.coverall.data),
                 "coverall_burn":   s2i(form.coverall_burn.data),
                 "coverall_goal":   s2i(form.coverall_goal.data),
                 "coverall_complete": percent(form.coverall.data, form.coverall_goal.data),
 
-                "sanitizer_date":  utc,
+                "sanitizer_date":  utc_updated,
                 "sanitizer":       s2f(form.sanitizer.data),
                 "sanitizer_burn":  s2f(form.sanitizer_burn.data),
                 "sanitizer_goal":  s2f(form.sanitizer_goal.data),
                 "sanitizer_complete":  percent(form.sanitizer.data, form.sanitizer_goal.data),
 
-                "goggle_date":     utc,
+                "goggle_date":     utc_updated,
                 "goggle":          s2i(form.goggle.data),
                 "goggle_burn":     s2i(form.goggle_burn.data),
                 "goggle_goal":     s2i(form.goggle_goal.data),
@@ -315,12 +326,13 @@ def update_ppe(facility="Clatsop"):
         df = pd.DataFrame.spatial.from_layer(layer)
         #print(df)
 
-        clatsop_df = df[df.facility == facility]
-        #print(clatsop_df)
-        newest = clatsop_df.sort_values(
+        ppe_df = df[df.facility == facility]
+        #print(ppe_df)
+        newest = ppe_df.sort_values(
             by=['utc_date'], ascending=False).head(1)
-        #print(newest)
+#        print("QUERY SORTED BY date", newest)
         s = newest.iloc[0]
+        print("QUERY RESULTS")
         print(s)
 
         # Force the old date into UTC
@@ -329,8 +341,14 @@ def update_ppe(facility="Clatsop"):
         form.old_date = "(previous %s)" % old_date.astimezone(
             timezone('America/Los_Angeles')).strftime(time_format)
 
-        form.facility.data = s['facility']
+        if facility != 'Clatsop':
+            old_date = s['n95_date'].replace(tzinfo=timezone('UTC'))
+            # Show the old date in the local TZ
+            form.updated.data = old_date.astimezone(
+                timezone('America/Los_Angeles')).strftime(time_format)
 
+        form.facility.data = s['facility']
+        
         form.n95.data = s['n95']
         form.n95_burn.data = s['n95_burn']
         form.n95_goal.data = s['n95_goal']

@@ -52,6 +52,8 @@ class PPEForm(FlaskForm):
     # NB IntegerField() would not accept 0 as input!!
     # NumberRange is not working the way I expect
 
+    updated = StringField(u'updated') # Date from HOSCAP
+
     n95 = StringField(u'n95')
     n95_burn = StringField(u'n95_burn')
     n95_goal = StringField(u'n95_goal')
