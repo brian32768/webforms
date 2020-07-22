@@ -11,11 +11,9 @@ class Config(object):
     PORTAL_USER     = os.environ.get('PORTAL_USER')
     PORTAL_PASSWORD = os.environ.get('PORTAL_PASSWORD')
 
-    CASES_LAYER = os.environ.get('CASES_LAYER')
-    CASES_TITLE = os.environ.get('CASES_TITLE')
-    PPE_LAYER   = os.environ.get('PPE_LAYER')
-    PPE_TITLE   = os.environ.get('PPE_TITLE')
-
+    COVID_CASES_URL = os.environ.get('COVID_CASES_URL')
+    COVID_INVENTORY_URL = os.environ.get('PPE_INVENTORY_URL')
+   
     pass
 
 # That's all!
