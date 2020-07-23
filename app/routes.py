@@ -6,6 +6,7 @@ from config import Config
 
 import os
 from arcgis.gis import GIS
+from arcgis.features import FeatureLayer
 import pandas as pd
 
 from datetime import datetime
@@ -18,10 +19,8 @@ portal_url      = Config.PORTAL_URL
 portal_user     = Config.PORTAL_USER
 portal_password = Config.PORTAL_PASSWORD
 
-cases_layer = Config.CASES_LAYER
-cases_title = Config.CASES_TITLE
-ppe_layer   = Config.PPE_LAYER
-ppe_title   = Config.PPE_TITLE
+cases_url = Config.COVID_CASES_URL
+ppe_url   = Config.PPE_INVENTORY_URL
 
 county_centroid = {"x": -123.74, "y": 46.09}
 
@@ -37,34 +36,22 @@ def local2utc(t):
     """ Change a datetime object from local to UTC """
     return t.astimezone(timezone('UTC'))
 
-@app.route('/thanks')
-def thanks():
-    return render_template('thanks.html')
+@app.route('/thanks/<df>')
+def thanks(df=None):
+    portal = GIS(portal_url, portal_user, portal_password)
+    if df == 'cases':
+        results_df = FeatureLayer(cases_url).query(where="editor='EMD'", order_by_fields="utc_date DESC",
+                                return_all_records=False, result_record_count=1, return_geometry=False).sdf
+    elif df == 'ppe':
+        results_df = FeatureLayer(ppe_url).query(where="facility='Clatsop'", order_by_fields="utc_date DESC",
+                                return_all_records=False, result_record_count=1, return_geometry=False).sdf
+    else:
+        results_df = pd.DataFrame()
+    return render_template('thanks.html', df=results_df)
 
 @app.route('/fail')
 def fail(e=""):
     return render_template("fail.html", error=error)
-
-def connect(portal, layername, layertitle):
-    # Amusingly the GIS search function is sloppy and returns several...
-    # there does not appear to be an exact match option.
-    search_result = portal.content.search(query=layername,
-                                          item_type="Feature Layer Collection")
-    #print(search_result)
-    if len(search_result) < 1:
-        error = "Feature service '%s' not found." % layername
-        raise Exception(error)
-
-    # Search for the correct Feature Service
-    try:
-        layercollection = [
-            item for item in search_result if item.title == layertitle][0]
-    except IndexError:
-        print(layercollection)
-        raise Exception('Layer not found. "%s"' % layertitle)
-
-    return layercollection.layers[0]
-
 
 @app.route('/', methods=['GET'])
 def home_page():
@@ -75,22 +62,8 @@ def update_cases():
     global error
 
     form = CasesForm()
-
-    try:
-        portal = GIS(portal_url, portal_user, portal_password)
-    except Exception as e:
-        print("Connection to portal failed.", e)
-        error = e
-        return redirect('/fail')
-    try:
-        layer = connect(portal, cases_layer, cases_title)
-    except Exception as e:
-        print("Connection to Cases feature service failed.", e)
-        error = e
-        return redirect('/fail')
-
     if form.validate_on_submit():
-
+        # We've received input from a form, process it.
         #session['name'] = form.name.data
 
         try:
@@ -125,17 +98,24 @@ def update_cases():
 
         results = ''
         try:
+            portal = GIS(portal_url, portal_user, portal_password)
+            layer = FeatureLayer(cases_url)
             print(layer, n)
-            results = layer.edit_features(adds=[n])
+            #results = layer.edit_features(adds=[n])
+            del portal
         except Exception as e:
             error = e
             print("Write failed", e, results)
             return redirect("/fail")
 
-        return redirect('/thanks')
+        return redirect('/thanks/cases')
+
+    # Create a data entry form
 
     try:
-        # Try to populate the form with the newest values
+        portal = GIS(portal_url, portal_user, portal_password)
+        layer = FeatureLayer(cases_url).query().sdf
+    # Try to populate the form with the most recent values
         df = pd.DataFrame.spatial.from_layer(layer)
         #print(df)
         ppe_df = df[df.name == 'Clatsop']
@@ -207,22 +187,8 @@ def update_ppe(facility="Clatsop"):
         return redirect('/fail')
 
     form = PPEForm()
-
-    try:
-        portal = GIS(portal_url, portal_user, portal_password)
-    except Exception as e:
-        print("Connection to portal failed.", e)
-        error = e
-        return redirect('/fail')
-    try:
-        layer = connect(portal, ppe_layer, ppe_title)
-    except Exception as e:
-        print("Connection to PPE feature service failed.", e)
-        error = e
-        return redirect('/fail')
-
     if form.validate_on_submit():
-    # We have INPUT and now we're going to SAVE it.
+        # We have INPUT and now we're going to SAVE it.
 
         #session['name'] = form.name.data
 
@@ -310,21 +276,27 @@ def update_ppe(facility="Clatsop"):
 
         results = ''
         try:
-            #print(layer, n)
-            results = layer.edit_features(adds=[n])
+            portal = GIS(portal_url, portal_user, portal_password)
+            layer = FeatureLayer(ppe_url)
+            print(layer, n)
+            #results = layer.edit_features(adds=[n])
+            del portal
         except Exception as e:
             error = str(e) + ' -- make sure the layer is owned by sde not DBO'
             print("Write failed", e)
             return redirect("/fail")
 
-        return redirect('/thanks')
+        return redirect('/thanks/ppe')
 
     # We need input so we're sending the form.
 
     try:
         # Try to populate the form with the newest values
+        portal = GIS(portal_url, portal_user, portal_password)
+        layer = FeatureLayer(ppe_url)
         df = pd.DataFrame.spatial.from_layer(layer)
         #print(df)
+        del portal
 
         ppe_df = df[df.facility == facility]
         #print(ppe_df)
