@@ -12,7 +12,7 @@ class Config(object):
     PORTAL_PASSWORD = os.environ.get('PORTAL_PASSWORD')
 
     COVID_CASES_URL = os.environ.get('COVID_CASES_URL')
-    COVID_INVENTORY_URL = os.environ.get('PPE_INVENTORY_URL')
+    PPE_INVENTORY_URL = os.environ.get('PPE_INVENTORY_URL')
    
     pass
 
