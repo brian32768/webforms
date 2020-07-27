@@ -1,4 +1,3 @@
-from IPython.display import display
 from flask import render_template, redirect, flash
 from app import app
 from app.forms import CasesForm, PPEForm
@@ -63,6 +62,7 @@ def update_cases():
 
     form = CasesForm()
     if form.validate_on_submit():
+
         # We've received input from a form, process it.
         #session['name'] = form.name.data
 
@@ -75,20 +75,21 @@ def update_cases():
             return redirect("/fail")
 
         try:
-            n = {"attributes": {
-                "utc_date":        utc,
-                "last_update":     utc,
-                'name':            'Clatsop',
-                "total_cases":     s2i(form.positive.data),
-                "total_negative":  s2i(form.negative.data),
-                "total_tests":     s2i(form.positive.data)
-                + s2i(form.negative.data),
-                "total_recovered": s2i(form.recovered.data),
-                "total_deaths":    s2i(form.deaths.data),
+            n = {
+                "attributes": {
+                    "utc_date":        utc,
+                    "last_update":     utc,
+                    'name':            'Clatsop',
+                    "total_cases":     s2i(form.positive.data),
+                    "total_negative":  s2i(form.negative.data),
+                    "total_tests":     
+                        s2i(form.positive.data) + s2i(form.negative.data),
+                    "total_recovered": s2i(form.recovered.data),
+                    "total_deaths":    s2i(form.deaths.data),
 
-                "source":          VERSION,
-                "editor":          "EMD",
-            },
+                    "source":          VERSION,
+                    "editor":          "EMD",
+                },
                 "geometry": county_centroid
             }
         except Exception as e:
@@ -101,8 +102,7 @@ def update_cases():
             portal = GIS(portal_url, portal_user, portal_password)
             layer = FeatureLayer(cases_url)
             print(layer, n)
-            #results = layer.edit_features(adds=[n])
-            del portal
+            results = layer.edit_features(adds=[n])
         except Exception as e:
             error = e
             print("Write failed", e, results)
@@ -114,32 +114,31 @@ def update_cases():
 
     try:
         portal = GIS(portal_url, portal_user, portal_password)
-        layer = FeatureLayer(cases_url).query().sdf
-    # Try to populate the form with the most recent values
-        df = pd.DataFrame.spatial.from_layer(layer)
-        #print(df)
-        ppe_df = df[df.name == 'Clatsop']
-        #print(ppe_df)
-        newest = ppe_df.sort_values(
-            by=['utc_date'], ascending=False).head(1)
-        #print(newest)
-        s = newest.iloc[0]
-        #print(s)
+        df = FeatureLayer(cases_url).query(where="name='Clatsop' AND editor='EMD'", order_by_fields="utc_date DESC").sdf
+        s = df.iloc[0]
+        print(s)
+    except Exception as e:
+        print("Reading old data failed.", e)
+        pass
 
+    try:
         # Force the old date into UTC
         old_date = s['utc_date'].replace(tzinfo=timezone('UTC'))
         # Show the old date in the local TZ
         form.old_date = "(previous %s)" % old_date.astimezone(
             timezone('America/Los_Angeles')).strftime(time_format)
+    except Exception as e:
+        print("Converting old date stamp failed.", e)
+        pass
 
+    try:
         form.positive.data = s['total_cases']
         form.negative.data = s['total_negative']
         form.recovered.data = s['total_recovered']
         form.deaths.data = s['total_deaths']
         #form.editor.data =    s['editor']
-
     except Exception as e:
-        print("Reading old data failed.", e)
+        print("Filling in form failed.", e)
         pass
 
     now = datetime.now()
