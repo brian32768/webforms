@@ -1,7 +1,11 @@
 version: '3.6'
+networks:
+  proxy_net:
+    name: proxy_net
+    external: true
+
 services:
   webforms:
-    container_name: webforms
     env_file: .env
     environment:
       VIRTUAL_HOST: ${FLASK_HOST}
@@ -10,25 +14,19 @@ services:
       LETSENCRYPT_HOST: ${FLASK_HOST}
       LETSENCRYPT_MAIL: ${MY_EMAIL}
       PORTAL_URL: ${PORTAL_URL}
+
     volumes:
       - "/etc/localtime:/etc/localtime:ro"
       - "/etc/timezone:/etc/timezone:ro"
-    restart: unless-stopped
+
     networks:
       proxy_net:
         aliases:
           - webforms
-    # For cc-testmaps I want to be able to hit the server without any proxy, so, I do this
-    ports:
-      - "5000:5000"
-    expose:
-      - "5000"
+
     image: brian32768/webforms:latest
+
     build:
       context: .
       dockerfile: Dockerfile
  
-networks:
-  proxy_net:
-    name: proxy_net
-    external: true

@@ -12,7 +12,7 @@ from datetime import datetime
 from pytz import timezone
 from tzlocal import get_localzone
 
-VERSION = 'webforms 1.2'
+VERSION = 'webforms 1.3'
 
 portal_url      = Config.PORTAL_URL
 portal_user     = Config.PORTAL_USER
@@ -80,12 +80,14 @@ def update_cases():
                     "utc_date":        utc,
                     "last_update":     utc,
                     'name':            'Clatsop',
-                    "total_cases":     s2i(form.positive.data),
+                    "total_cases":     s2i(form.total_cases.data),
+                    "new_cases":       s2i(form.new_cases.data),
                     "total_negative":  s2i(form.negative.data),
-                    "total_tests":     
-                        s2i(form.positive.data) + s2i(form.negative.data),
-                    "total_recovered": s2i(form.recovered.data),
-                    "total_deaths":    s2i(form.deaths.data),
+
+                    "total_tests":     s2i(form.total_cases.data) + s2i(form.negative.data),
+                    
+                    "total_deaths":    s2i(form.total_deaths.data),
+                    "new_deaths":      s2i(form.new_deaths.data),
 
                     "source":          VERSION,
                     "editor":          "EMD",
@@ -132,11 +134,13 @@ def update_cases():
         pass
 
     try:
-        form.positive.data = s['total_cases']
-        form.negative.data = s['total_negative']
-        form.recovered.data = s['total_recovered']
-        form.deaths.data = s['total_deaths']
-        #form.editor.data =    s['editor']
+        form.total_cases.data  = s['total_cases']
+        form.new_cases.data    = s['new_cases']
+        form.negative.data     = s['total_negative']
+        form.recovered.data    = s['total_recovered']
+        form.total_deaths.data = s['total_deaths']
+        form.new_deaths.data   = s['new_deaths']
+        #form.editor.data      = s['editor']
     except Exception as e:
         print("Filling in form failed.", e)
         pass
