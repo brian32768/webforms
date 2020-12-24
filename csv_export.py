@@ -49,15 +49,11 @@ def utc2localdate(utc_naive):
 
 def clean_data(sdf):
     """ Return two df's, one for total cases and one for daily cases. """
-    
-    #print(sdf.columns)
 
-    # We're only interested in data manually entered for Clatsop
-    # and there are some whacky entries at the start.
-    #print(len(sdf))
-    sdf = sdf[(sdf.editor == 'EMD') & (sdf.total_cases<10000)]
-    #print(len(sdf))
-    
+    # There should be about 100 rows here,
+    # because it's already been filtered for EMD entries only.
+    print(len(sdf), sdf.columns)
+
     # Convert to localtime.
     #sdf['date'] = utc2local(sdf['utc_date'])
 
@@ -127,9 +123,11 @@ def csv_exporter(df, outputdir):
 #============================================================================
 if __name__ == "__main__":
 
-    # For testing, write to where the D3 JavaScript lives
+    # For testing, try to write to where the D3 JavaScript lives
     outputdir = '../corona_collector/src'
-    assert os.path.exists(outputdir)
+    if not os.path.exists(outputdir):
+        # whelp write locally then
+        outputdir = '.'
 
     try:
         portal = GIS(portalUrl, portalUser, portalPasswd)
@@ -141,6 +139,11 @@ if __name__ == "__main__":
         exit(-1)
 
     sdf = pd.DataFrame.spatial.from_layer(layer)
+
+    # We're only interested in data manually entered for Clatsop
+    print(len(sdf))
+    sdf = sdf[sdf.editor == 'EMD']
+
     csv_exporter(sdf, outputdir)
     print("...and we're done")
     exit(0)
