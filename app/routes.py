@@ -46,7 +46,10 @@ def thanks(df=None):
     portal = GIS(portal_url, portal_user, portal_password)
     if df == 'cases':
         # Generate new CSV files while we're at it.
+        # In production they will be written to the "capacity" webserver
+        # In a test environment they end up in the local folder.
         csv_exporter(df, "cases")
+
         results_df = FeatureLayer(cases_url).query(where="editor='EMD'", order_by_fields="utc_date DESC",
                                 return_all_records=False, result_record_count=1, return_geometry=False).sdf
     elif df == 'ppe':
