@@ -1,4 +1,5 @@
 version: '3.6'
+
 networks:
   proxy_net:
     name: proxy_net
@@ -18,6 +19,10 @@ services:
     volumes:
       - "/etc/localtime:/etc/localtime:ro"
       - "/etc/timezone:/etc/timezone:ro"
+
+      # This allows writing updated CSV files directly into the nginx "capacity" docker
+      # from the csv_export.py script.
+      - "/home/gis/docker/capacity/html/cases:/srv/webforms/cases:rw"
 
     networks:
       proxy_net:

@@ -10,7 +10,10 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
-            "console": "integratedTerminal"
+            "console": "internalConsole",
+            "env": {
+                "Path": "${env:Path};C:/Users/brian/AppData/Local/ESRI/conda/envs/covid/Library/bin/"
+            }
         },
         {
             "name": "Python: Flask",

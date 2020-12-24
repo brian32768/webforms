@@ -3,7 +3,8 @@ python=3.6.10
 flask>=1.1.2
 flask-bootstrap>=3.2
 flask-wtf>=0.14
-arcgis>=1.8.2
+arcgis>=1.8.3
 tzlocal>=2.1
 python-dotenv>=0.13
 bs4>=4.9
+pytz

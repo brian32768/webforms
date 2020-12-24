@@ -21,6 +21,7 @@ WORKDIR $WEBFORMS_BASE
 
 COPY start_app.py .
 COPY config.py .
+COPY csv_export.py .
 COPY app/ app/
 
 EXPOSE 5000

@@ -1,3 +1,14 @@
+# Webforms
+
+This is a web form for COVID data entry. 
+It runs as a flask app in a Docker.
+
+Output goes into Portal feature classes.
+
+After each update of the 'cases' database,
+it triggers an export to CSV so that my D3 chart
+gets the latest data.
+
 ## Testing
 
 The runtime environment is LINUX in Docker.

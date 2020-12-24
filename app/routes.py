@@ -2,6 +2,7 @@ from flask import render_template, redirect, flash
 from app import app
 from app.forms import CasesForm, PPEForm
 from config import Config
+from csv_export import csv_exporter
 
 import os
 from arcgis.gis import GIS
@@ -11,6 +12,7 @@ import pandas as pd
 from datetime import datetime
 from pytz import timezone
 from tzlocal import get_localzone
+from utils import local2utc
 
 VERSION = 'webforms 1.3'
 
@@ -21,24 +23,30 @@ portal_password = Config.PORTAL_PASSWORD
 cases_url = Config.COVID_CASES_URL
 ppe_url   = Config.PPE_INVENTORY_URL
 
+# This will prevent the app from starting
+# if it's missing required environment settings.
+assert portal_url
+assert portal_user
+assert portal_password
+assert cases_url
+assert ppe_url
+
 county_centroid = {"x": -123.74, "y": 46.09}
-
 time_format = "%m/%d/%Y %H:%M"
-
-error = "ERROR 99999" # yes it's a global variable, sorry
+error = "ERROR 99999"
 
 def parsetime(s) :
     """ Parse a time string and return a datetime object. """
     return datetime.strptime(s, time_format)
 
-def local2utc(t):
-    """ Change a datetime object from local to UTC """
-    return t.astimezone(timezone('UTC'))
-
 @app.route('/thanks/<df>')
 def thanks(df=None):
+
+    # Show the data that was just entered.
     portal = GIS(portal_url, portal_user, portal_password)
     if df == 'cases':
+        # Generate new CSV files while we're at it.
+        csv_exporter(df, "cases")
         results_df = FeatureLayer(cases_url).query(where="editor='EMD'", order_by_fields="utc_date DESC",
                                 return_all_records=False, result_record_count=1, return_geometry=False).sdf
     elif df == 'ppe':
@@ -378,6 +386,5 @@ def update_ppe(facility="Clatsop"):
         html = 'ppe.html'
 
     return render_template(html, form=form)
-
 
 # That's all!
