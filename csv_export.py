@@ -52,7 +52,7 @@ def clean_data(sdf):
 
     # There should be about 100 rows here,
     # because it's already been filtered for EMD entries only.
-    print(len(sdf), sdf.columns)
+    #print(len(sdf), sdf.columns)
 
     # Convert to localtime.
     #sdf['date'] = utc2local(sdf['utc_date'])

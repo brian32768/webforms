@@ -48,8 +48,6 @@ def thanks(df=None):
         # Generate new CSV files while we're at it.
         # In production they will be written to the "capacity" webserver
         # In a test environment they end up in the local folder.
-        csv_exporter(df, "cases")
-
         results_df = FeatureLayer(cases_url).query(where="editor='EMD'", order_by_fields="utc_date DESC",
                                 return_all_records=False, result_record_count=1, return_geometry=False).sdf
     elif df == 'ppe':
@@ -110,15 +108,28 @@ def update_cases():
             error = e
             return redirect("/fail")
 
+        # write back to server
         results = ''
         try:
             portal = GIS(portal_url, portal_user, portal_password)
             layer = FeatureLayer(cases_url)
             print(layer, n)
             results = layer.edit_features(adds=[n])
+
         except Exception as e:
             error = e
-            print("Write failed", e, results)
+            print("Write failed.", e, results)
+            return redirect("/fail")
+
+        # read from server and write to CSV file
+        try:
+            sdf = pd.DataFrame.spatial.from_layer(layer)
+            # We're only interested in data manually entered for Clatsop
+            emd_df = sdf[sdf.editor == 'EMD']
+            csv_exporter(emd_df, "cases")
+        except Exception as e:
+            error = e
+            print("CSV update failed.", e, results)
             return redirect("/fail")
 
         return redirect('/thanks/cases')
