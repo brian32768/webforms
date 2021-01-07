@@ -66,15 +66,15 @@ def clean_data(sdf):
     #keepers = ['utc_date', 'total_cases']
     #dedupe = df.filter(items=keepers)
 
-    # Get ready to calc new_cases    
+    # Get ready to calc daily_cases    
     #sorted = dedupe.set_index('utc_date')
 
     # save the total cases so we can add it back in
     #total_cases = sorted['total_cases']
     #
-    ## Calculate proper value for new_cases
-    #newdf = sorted.diff()
-    #rdf = newdf.rename(columns={'total_cases':'new_cases'})
+    ## Calculate proper value for daily_cases
+    #dailydf = sorted.diff()
+    #rdf = dailydf.rename(columns={'total_cases':'new_cases'})
     #
     # put total_cases back in
     #rdf['total_cases'] = total_cases
@@ -89,11 +89,11 @@ def clean_data(sdf):
 
     # Get rid of everything but the time and count.
     keepers = ['date', 'new_cases']
-    new_df = df.filter(items=keepers)
-    new_df.rename(columns={'new_cases':'cases'},inplace=True)
+    daily_df = df.filter(items=keepers)
+    daily_df.rename(columns={'new_cases':'cases'},inplace=True)
 
     # Calculate a 7 day average, some day...
-    new_df['avg'] = new_df.iloc[:,0].rolling(window=7).mean()
+    daily_df['avg'] = daily_df.iloc[:,0].rolling(window=7).mean()
 
     # Get rid of everything but the time and count.
     keepers = ['date', 'total_cases']
@@ -103,19 +103,19 @@ def clean_data(sdf):
     # Calculate a 7 day average, some day...
     total_df['avg'] = total_df.iloc[:,0].rolling(window=7).mean()
 
-    return (new_df, total_df)
+    return (daily_df, total_df)
 
 def csv_exporter(df, outputdir):
     """ NB This is called from the webforms app. """
 
-    (new_df, total_df) = clean_data(df)
+    (daily_df, total_df) = clean_data(df)
 
     # Easy peasy once the data is in a DF.
 
-#    print(new_df)
+#    print(daily_df)
 #    print(total_df)
 
-    new_df.to_csv(os.path.join(outputdir, 'emd_daily_cases.csv'), header=True, index=True)
+    daily_df.to_csv(os.path.join(outputdir, 'emd_daily_cases.csv'), header=True, index=True)
     total_df.to_csv(os.path.join(outputdir, 'emd_total_cases.csv'), header=True, index=True)
         
     return True
