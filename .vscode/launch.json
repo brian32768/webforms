@@ -15,22 +15,26 @@
             }
         },
         {
-            "name": "Python: Flask",
+            "name": "Python: Webforms App",
             "type": "python",
-            "console": "internalConsole",
             "request": "launch",
             "module": "flask",
             "env": {
-                "FLASK_APP": "app",
-                "FLASK_ENV": "development",
-                "FLASK_DEBUG": "0"
+                "PYTHONDONTWRITEBYTECODE": "1",
+                "FLASK_APP": "start_app"
             },
             "args": [
                 "run",
-                "--no-debugger",
                 "--no-reload"
             ],
-            "jinja": true
+            "jinja": true,
+            "console": "internalConsole",
+            // Launch a browser and hand it our URL after flask starts.
+            "serverReadyAction": {
+                "pattern": "Running on (https?://[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+:[0-9]+)",
+                "uriFormat": "%s",
+                "action":"openExternally"
+            }
         }
     ]
 }

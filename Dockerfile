@@ -3,27 +3,22 @@ LABEL maintainer="Brian Wilson <brian@wildsong.biz>"
 LABEL version="1.0"
 LABEL biz.wildsong.name="webforms"
 
-ENV WEBFORMS_BASE /srv/webforms
-RUN mkdir $WEBFORMS_BASE
-
-COPY requirements.txt ./
+ENV SERVER_BASE /srv
 
 # This will upgrade conda, so the fact that the base image is old does not matter
-# flask-bootstrap needs hugo
-#
 RUN conda update -n base -c defaults conda
+
+# flask-bootstrap needs hugo
 RUN conda config --add channels conda-forge &&\
     conda config --add channels hugo &&\
-    conda config --add channels Esri &&\
-    conda install --file requirements.txt
+    conda config --add channels Esri
 
-WORKDIR $WEBFORMS_BASE
 
-COPY start_app.py .
-COPY config.py .
-COPY csv_export.py .
-COPY utils.py .
-COPY app/ app/
+COPY requirements.txt ./
+RUN conda install --file requirements.txt
 
-EXPOSE 5000
-CMD python3 start_app.py 5000
+# Don't run as root
+RUN adduser --disabled-password --gecos '' app
+
+WORKDIR $SERVER_BASE
+

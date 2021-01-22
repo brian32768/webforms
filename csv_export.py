@@ -1,11 +1,13 @@
 #!/usr/bin/env -S conda run -n covid python
 """
-    Read covid cases from Portal into a dataframe.
+    Using a dataframe, 
     Calculate values for the 7-day moving window average.
     Export it as a csv file so D3 in JavaScript can read it.
 
     This can be run as a standalone script to test it,
     but normally the csv_exporter is called from webforms.
+    When running standalone it will need a proper configuration
+    to be able to read the data from Delta.
 """
 import os
 import pytz
@@ -18,17 +20,7 @@ from datetime import datetime, timezone
 from utils import connect
 from config import Config
 
-# read data from here
-portalUrl = Config.PORTAL_URL
-portalUser = Config.PORTAL_USER
-portalPasswd = Config.PORTAL_PASSWORD
-featurelayerUrl = Config.COVID_CASES_URL
 
-# fail immediately if the environment is not set up correctly
-assert portalUrl
-assert portalUser
-assert portalPasswd
-assert featurelayerUrl
 
 tformat = "%Y-%m-%d %H:%M"
 pactz = pytz.timezone('America/Los_Angeles')
@@ -122,6 +114,20 @@ def csv_exporter(df, outputdir):
 
 #============================================================================
 if __name__ == "__main__":
+
+    from config import Config
+    
+    # read data from here
+    portalUrl = Config.PORTAL_URL
+    portalUser = Config.PORTAL_USER
+    portalPasswd = Config.PORTAL_PASSWORD
+    featurelayerUrl = Config.COVID_CASES_URL
+
+    # fail immediately if the environment is not set up correctly
+    assert portalUrl
+    assert portalUser
+    assert portalPasswd
+    assert featurelayerUrl
 
     # For testing, try to write to where the D3 JavaScript lives
     outputdir = '../corona_collector/src'
