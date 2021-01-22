@@ -15,13 +15,15 @@ services:
     environment:
       PYTHONPATH: /srv
       FLASK_APP: start_app
-      VIRTUAL_HOST: ${FLASK_RUN_HOST}
-      VIRTUAL_PORT: ${FLASK_RUN_PORT}
+      FLASK_RUN_PORT: 5000
+      FLASK_RUN_HOST: 0.0.0.0
+      VIRTUAL_HOST: webforms.co.clatsop.or.us
+      VIRTUAL_PORT: 5000
       NETWORK_ACCESS: internal
-      LETSENCRYPT_HOST: ${FLASK_RUN_HOST}
+      LETSENCRYPT_HOST: webforms.co.clatsop.or.us
       LETSENCRYPT_MAIL: ${MY_EMAIL}
       PORTAL_URL: ${PORTAL_URL}
-    command: flask run
+    command: ["flask", "run"]
     volumes:
       - .:/srv
       - "/etc/localtime:/etc/localtime:ro"
@@ -30,6 +32,8 @@ services:
       # This allows writing updated CSV files directly into the nginx "capacity" docker
       # from the csv_export.py script.
       - "/home/gis/docker/capacity/html/cases:/srv/cases:rw"
+    ports:
+      - 5000:5000
     user: app
     networks:
       proxy_net:
