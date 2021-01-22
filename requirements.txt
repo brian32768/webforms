@@ -9,3 +9,4 @@ tzlocal>=2.1
 python-dotenv>=0.15
 bs4>=4.9
 pytz
+gunicorn>=20.0.4
