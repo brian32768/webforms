@@ -27,21 +27,21 @@ to see how it is set up.
         pass
 
 class DevConfig(Config):
-    DEBUG = True
+    DEBUG = True # Loglevel
 
 class TestConfig(Config):
     TESTING = True
-    DEBUG = True
+    DEBUG = True # Loglevel
 
 class ProdConfig(Config):
-    DEBUG = False
+    DEBUG = False # Loglevel
 
 
 config = {
     'development': DevConfig,
     'testing': TestConfig,
     'production': ProdConfig,
-    'default': DevConfig
+    'default': ProdConfig
 }
 
 if __name__ == "__main__":
