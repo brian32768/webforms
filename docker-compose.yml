@@ -1,4 +1,4 @@
-version: '3.6'
+version: '3.7'
 
 networks:
   proxy_net:
@@ -7,31 +7,32 @@ networks:
 
 services:
   webforms:
+    image: brian32768/webforms:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     env_file: .env
     environment:
-      VIRTUAL_HOST: ${FLASK_HOST}
-      VIRTUAL_PORT: ${FLASK_PORT}
+      PYTHONPATH: /srv
+      FLASK_APP: start_app
+      VIRTUAL_HOST: ${FLASK_RUN_HOST}
+      VIRTUAL_PORT: ${FLASK_RUN_PORT}
       NETWORK_ACCESS: internal
-      LETSENCRYPT_HOST: ${FLASK_HOST}
+      LETSENCRYPT_HOST: ${FLASK_RUN_HOST}
       LETSENCRYPT_MAIL: ${MY_EMAIL}
       PORTAL_URL: ${PORTAL_URL}
-
+    command: flask run
     volumes:
+      - .:/srv
       - "/etc/localtime:/etc/localtime:ro"
       - "/etc/timezone:/etc/timezone:ro"
 
       # This allows writing updated CSV files directly into the nginx "capacity" docker
       # from the csv_export.py script.
-      - "/home/gis/docker/capacity/html/cases:/srv/webforms/cases:rw"
-
+      - "/home/gis/docker/capacity/html/cases:/srv/cases:rw"
+    user: app
     networks:
       proxy_net:
         aliases:
           - webforms
-
-    image: brian32768/webforms:latest
-
-    build:
-      context: .
-      dockerfile: Dockerfile
  

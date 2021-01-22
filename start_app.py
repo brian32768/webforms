@@ -1,13 +1,18 @@
-import sys
-from app import app
+"""
+Start me with
 
-if __name__ == "__main__":
-    port = 5000
-    try:
-        port = sys.argv[1]
-    except:
-        pass
-    print("Starting webforms service on port", port)
-    app.run(host='0.0.0.0', port=port, debug=True)
+    FLASK_APP=start_app flask run
 
-# That's all!
+"""
+import os
+from unittest.loader import TestLoader
+from app import create_app
+
+app = create_app(os.environ.get('FLASK_ENV', 'default'))
+
+@app.cli.command()
+def test():
+    import unittest
+    tests = unittest.TestLoader().discover('tests')
+    unittest.TextTestRunner(verbosity=2).run(tests)
+

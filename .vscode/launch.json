@@ -4,7 +4,6 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-    
         {
             "name": "Python: Current File",
             "type": "python",
@@ -16,21 +15,26 @@
             }
         },
         {
-            "name": "Python: Flask",
+            "name": "Python: Webforms App",
             "type": "python",
             "request": "launch",
             "module": "flask",
             "env": {
-                "FLASK_APP": "app",
-                "FLASK_ENV": "development",
-                "FLASK_DEBUG": "0"
+                "PYTHONDONTWRITEBYTECODE": "1",
+                "FLASK_APP": "start_app"
             },
             "args": [
                 "run",
-                "--no-debugger",
                 "--no-reload"
             ],
-            "jinja": true
+            "jinja": true,
+            "console": "internalConsole",
+            // Launch a browser and hand it our URL after flask starts.
+            "serverReadyAction": {
+                "pattern": "Running on (https?://[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+:[0-9]+)",
+                "uriFormat": "%s",
+                "action":"openExternally"
+            }
         }
     ]
 }

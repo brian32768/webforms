@@ -1,35 +1,20 @@
-from flask import render_template, redirect, flash
-from app import app
-from app.forms import CasesForm, PPEForm
-from config import Config
-from csv_export import csv_exporter
-
 import os
 from arcgis.gis import GIS
 from arcgis.features import FeatureLayer
 import pandas as pd
-
 from datetime import datetime
 from pytz import timezone
 from tzlocal import get_localzone
+
+from flask import render_template, redirect, flash
+from flask import current_app
+from . import main
+from .forms import CasesForm, PPEForm
+from csv_export import csv_exporter
+
 from utils import local2utc
 
-VERSION = 'webforms 1.3'
-
-portal_url      = Config.PORTAL_URL
-portal_user     = Config.PORTAL_USER
-portal_password = Config.PORTAL_PASSWORD
-
-cases_url = Config.COVID_CASES_URL
-ppe_url   = Config.PPE_INVENTORY_URL
-
-# This will prevent the app from starting
-# if it's missing required environment settings.
-assert portal_url
-assert portal_user
-assert portal_password
-assert cases_url
-assert ppe_url
+VERSION = 'webforms 1.4'
 
 county_centroid = {"x": -123.74, "y": 46.09}
 time_format = "%m/%d/%Y %H:%M"
@@ -39,8 +24,19 @@ def parsetime(s) :
     """ Parse a time string and return a datetime object. """
     return datetime.strptime(s, time_format)
 
-@app.route('/thanks/<df>')
+@main.route('/fail')
+def fail(e=""):
+    return render_template("fail.html", error=error)
+
+@main.route('/thanks/<df>')
 def thanks(df=None):
+
+    portal_url = current_app.config['PORTAL_URL']
+    portal_user = current_app.config['PORTAL_USER']
+    portal_password = current_app.config['PORTAL_PASSWORD']
+
+    cases_url = current_app.config['COVID_CASES_URL']
+    ppe_url   = current_app.config['PPE_INVENTORY_URL']
 
     # Show the data that was just entered.
     portal = GIS(portal_url, portal_user, portal_password)
@@ -57,17 +53,19 @@ def thanks(df=None):
         results_df = pd.DataFrame()
     return render_template('thanks.html', df=results_df)
 
-@app.route('/fail')
-def fail(e=""):
-    return render_template("fail.html", error=error)
-
-@app.route('/', methods=['GET'])
+@main.route('/', methods=['GET'])
 def home_page():
     return render_template('home.html')
 
-@app.route('/cases', methods=['GET', 'POST'])
+@main.route('/cases', methods=['GET', 'POST'])
 def update_cases():
     global error
+
+    portal_url = current_app.config['PORTAL_URL']
+    portal_user = current_app.config['PORTAL_USER']
+    portal_password = current_app.config['PORTAL_PASSWORD']
+
+    cases_url = current_app.config['COVID_CASES_URL']
 
     form = CasesForm()
     if form.validate_on_submit():
@@ -109,6 +107,7 @@ def update_cases():
             return redirect("/fail")
 
         # write back to server
+
         results = ''
         try:
             portal = GIS(portal_url, portal_user, portal_password)
@@ -159,7 +158,7 @@ def update_cases():
         form.total_cases.data  = s['total_cases']
         form.new_cases.data    = s['new_cases']
         form.negative.data     = s['total_negative']
-        form.recovered.data    = s['total_recovered']
+        #form.recovered.data    = s['total_recovered']
         form.total_deaths.data = s['total_deaths']
         form.new_deaths.data   = s['new_deaths']
         #form.editor.data      = s['editor']
@@ -203,9 +202,15 @@ def percent(n,d):
             return round(fn * 100.0 / fd, 0)
     return 0
 
-@app.route('/ppe/<facility>', methods=['GET', 'POST'])
+@main.route('/ppe/<facility>', methods=['GET', 'POST'])
 def update_ppe(facility="Clatsop"):
     global error
+
+    portal_url = current_app.config['PORTAL_URL']
+    portal_user = current_app.config['PORTAL_USER']
+    portal_password = current_app.config['PORTAL_PASSWORD']
+
+    ppe_url   = current_app.config['PPE_INVENTORY_URL']
 
     if not facility in ['Clatsop', 'PSH', 'CMH']:
         error = 'Could not recognize the facilty name'
