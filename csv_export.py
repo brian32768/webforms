@@ -18,8 +18,6 @@ import csv
 from datetime import datetime, timezone
 
 from utils import connect
-from config import Config
-
 
 
 tformat = "%Y-%m-%d %H:%M"
@@ -115,13 +113,15 @@ def csv_exporter(df, outputdir):
 #============================================================================
 if __name__ == "__main__":
 
-    from config import Config
+    from config import config
+
+    configObj = config['testing']
     
     # read data from here
-    portalUrl = Config.PORTAL_URL
-    portalUser = Config.PORTAL_USER
-    portalPasswd = Config.PORTAL_PASSWORD
-    featurelayerUrl = Config.COVID_CASES_URL
+    portalUrl       = configObj.PORTAL_URL
+    portalUser      = configObj.PORTAL_USER
+    portalPasswd    = configObj.PORTAL_PASSWORD
+    featurelayerUrl = configObj.COVID_CASES_URL
 
     # fail immediately if the environment is not set up correctly
     assert portalUrl
