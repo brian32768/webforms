@@ -39,4 +39,18 @@ services:
       proxy_net:
         aliases:
           - webforms
- 
+    # Swarm deployment
+    deploy:
+      mode: global
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 15s
+        max_attempts: 10
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 30s

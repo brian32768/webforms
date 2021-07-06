@@ -42,3 +42,12 @@ $ docker run -d -p 80:80 -p 443:443 \
     -v /var/run/docker.sock:/tmp/docker.sock:ro \
     jwilder/nginx-proxy
 
+## Deploy
+
+For some reason this app won't run in Docker Swarm,
+and I have no motivation to troubleshoot it right now. SO...
+
+
+```bash
+docker-compose up -d
+```
