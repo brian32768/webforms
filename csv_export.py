@@ -15,10 +15,12 @@ from arcgis.gis import GIS
 import pandas as pd
 import numpy as np
 import csv
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from utils import connect
 
+# Ignore data more than 6 months old
+DAYS = 30 * 6
 
 tformat = "%Y-%m-%d %H:%M"
 pactz = pytz.timezone('America/Los_Angeles')
@@ -37,15 +39,12 @@ def utc2localdate(utc_naive):
     rval = p.strftime('%m/%d/%y')
     return rval
 
-def clean_data(sdf):
+def clean_data(sdf, days):
     """ Return two df's, one for total cases and one for daily cases. """
 
     # There should be about 100 rows here,
     # because it's already been filtered for EMD entries only.
-    #print(len(sdf), sdf.columns)
-
-    # Convert to localtime.
-    #sdf['date'] = utc2local(sdf['utc_date'])
+    print(len(sdf), sdf.columns)
 
     # Get rid of extra readings (just one a day is good)
     # With EMD data, these are just test cases when I was developing webforms
@@ -75,7 +74,12 @@ def clean_data(sdf):
     for utc_naive in sdf.loc[:, 'utc_date']:
         date.append(utc2localdate(utc_naive))
     sdf['date'] = date
-    df = sdf.set_index('date')
+
+    if days > 0:
+        start_date = datetime.utcnow() - timedelta(days)
+        df = sdf[sdf['last_update'] >= start_date].set_index('date')
+    else:
+        df = sdf.set_index('date')
 
     # Get rid of everything but the time and count.
     keepers = ['date', 'new_cases']
@@ -98,7 +102,7 @@ def clean_data(sdf):
 def csv_exporter(df, outputdir):
     """ NB This is called from the webforms app. """
 
-    (daily_df, total_df) = clean_data(df)
+    (daily_df, total_df) = clean_data(df, DAYS)
 
     # Easy peasy once the data is in a DF.
 
