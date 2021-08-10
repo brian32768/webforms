@@ -47,7 +47,16 @@ $ docker run -d -p 80:80 -p 443:443 \
 For some reason this app won't run in Docker Swarm,
 and I have no motivation to troubleshoot it right now. SO...
 
-
 ```bash
 docker-compose up -d
+```
+
+## Updates
+
+If you change files here in this folder, you have to redeploy to get them into the running image.
+This works for me.
+
+```bash
+docker-compose build
+docker-compose restart
 ```

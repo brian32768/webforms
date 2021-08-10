@@ -18,6 +18,7 @@ import csv
 from datetime import datetime, timezone, timedelta
 
 from utils import connect
+from config import config
 
 # Ignore data more than 6 months old
 DAYS = 30 * 6
@@ -100,8 +101,11 @@ def clean_data(sdf, days):
     return (daily_df, total_df)
 
 def csv_exporter(df, outputdir):
-    """ NB This is called from the webforms app. """
+    """ 
+    Export data from a dataframe to the output directory as CSV files.
 
+    NB This is called directly from the webforms app. 
+    """
     (daily_df, total_df) = clean_data(df, DAYS)
 
     # Easy peasy once the data is in a DF.
@@ -117,9 +121,7 @@ def csv_exporter(df, outputdir):
 #============================================================================
 if __name__ == "__main__":
 
-    from config import config
-
-    configObj = config['testing']
+    configObj = config['testing'] # log more data and write only test files
     
     # read data from here
     portalUrl       = configObj.PORTAL_URL
