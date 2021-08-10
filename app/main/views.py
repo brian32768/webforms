@@ -10,7 +10,12 @@ from flask import render_template, redirect, flash
 from flask import current_app
 from . import main
 from .forms import CasesForm, PPEForm
+
+# This is for the old D3 based chart
 from csv_export import csv_exporter
+
+# This generates a standalone HTML file
+from generate_chart import generate_chart
 
 from utils import local2utc
 
@@ -125,7 +130,13 @@ def update_cases():
             sdf = pd.DataFrame.spatial.from_layer(layer)
             # We're only interested in data manually entered for Clatsop
             emd_df = sdf[sdf.editor == 'EMD']
+
+            # This will generate two CSV files in the "cases" subdirectory
+            # which will be mounted from Docker to put the files into
+            # the "capacity" server.
             csv_exporter(emd_df, "cases")
+            generate_chart("cases/index.html")
+
         except Exception as e:
             error = e
             print("CSV update failed.", e, results)

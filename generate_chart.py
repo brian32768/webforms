@@ -1,4 +1,5 @@
-import os
+#!/usr/bin/env -S conda run -n covid python
+import os, sys
 import pandas as pd
 import numpy as np
 import arcgis.gis as GIS
@@ -7,7 +8,7 @@ from datetime import datetime
 import read_cases
 import plotly.graph_objects as go
 
-def generate_html():
+def generate_chart():
     sdf = read_cases.read_df()
     (daily, total) = read_cases.clean_data(sdf, days = 30*4)
 
@@ -22,10 +23,12 @@ def generate_html():
     timestamp = datetime.now().strftime("<i>updated %b %d %H:%M</i>")
     fig.update_layout(title="<b>Clatsop County Daily Coronavirus Cases</b><br /> %s" % timestamp)
 
-
     return fig
 
 if __name__ == '__main__':
-    fig = generate_html()
-    fig.show()
-    #fig.write_html(htmlfilename)
+    fig = generate_chart()
+    
+    if sys.argv[1]:
+        fig.write_html(sys.argv[1])
+    else:
+        fig.show()
