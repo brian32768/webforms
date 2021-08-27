@@ -1,4 +1,18 @@
 #!/usr/bin/env -S conda run -n covid python
+#
+#   Creates an HTML file containing the "daily cases" chart.
+#
+#   You should be able to generate a new chart any old time
+#   by running this from the command line. 
+#
+#   Just do the following from a command prompt
+# 
+#      ./generate_chart.py my_chart.html
+#
+#   Then copy my_chart.html to the right place,
+#
+#      cp my_chart.html ~/docker/capacity/html/cases/index.html
+#
 import os, sys
 import pandas as pd
 import numpy as np
@@ -7,6 +21,8 @@ import arcgis.features as Features
 from datetime import datetime
 import read_cases
 import plotly.graph_objects as go
+
+
 
 def generate_chart():
     sdf = read_cases.read_df()
@@ -28,7 +44,8 @@ def generate_chart():
 if __name__ == '__main__':
     fig = generate_chart()
     
-    if sys.argv[1]:
+    try:
         fig.write_html(sys.argv[1])
-    else:
+    except IndexError:
+        print("Give me a filename if you want HTML output.")
         fig.show()
