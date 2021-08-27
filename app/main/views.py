@@ -62,8 +62,33 @@ def thanks(df=None):
 def home_page():
     return render_template('home.html')
 
+def update_cases(layer):
+    """
+        Read from server and write to CSV file
+    """
+    try:
+        sdf = pd.DataFrame.spatial.from_layer(layer)
+        # We're only interested in data manually entered for Clatsop
+        emd_df = sdf[sdf.editor == 'EMD']
+
+        # This will generate two CSV files in the "cases" subdirectory
+        # which will be mounted from Docker to put the files into
+        # the "capacity" server.
+        # I no longer use the CSV files,
+        # generate_chart reads the feature class now.
+        #csv_exporter(emd_df, "cases")
+
+        fig = generate_chart()
+        fig.write_html("cases/index.html")
+
+    except Exception as e:
+        error = e
+        print("CSV update failed.", e)
+        return False
+    return True
+
 @main.route('/cases', methods=['GET', 'POST'])
-def update_cases():
+def cases_entry_form():
     global error
 
     portal_url = current_app.config['PORTAL_URL']
@@ -125,21 +150,7 @@ def update_cases():
             print("Write failed.", e, results)
             return redirect("/fail")
 
-        # read from server and write to CSV file
-        try:
-            sdf = pd.DataFrame.spatial.from_layer(layer)
-            # We're only interested in data manually entered for Clatsop
-            emd_df = sdf[sdf.editor == 'EMD']
-
-            # This will generate two CSV files in the "cases" subdirectory
-            # which will be mounted from Docker to put the files into
-            # the "capacity" server.
-            csv_exporter(emd_df, "cases")
-            generate_chart("cases/index.html")
-
-        except Exception as e:
-            error = e
-            print("CSV update failed.", e, results)
+        if not update_cases(layer):
             return redirect("/fail")
 
         return redirect('/thanks/cases')
