@@ -12,7 +12,7 @@ from . import main
 from .forms import CasesForm, PPEForm
 
 # This is for the old D3 based chart
-from csv_export import csv_exporter
+#from csv_export import csv_exporter
 
 # This generates a standalone HTML file
 from generate_chart import generate_chart
