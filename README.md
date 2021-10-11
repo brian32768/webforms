@@ -44,12 +44,13 @@ $ docker run -d -p 80:80 -p 443:443 \
 
 ## Deploy
 
-For some reason this app won't run in Docker Swarm,
-and I have no motivation to troubleshoot it right now. SO...
+This won't work yet, because of the container name problem in the proxy nginx.
 
-```bash
-docker-compose up -d
-```
+    docker stack deploy -c docker-compose.yml webforms
+
+so do the old fashioned thing
+
+    docker-compose up -d
 
 ## Updates
 

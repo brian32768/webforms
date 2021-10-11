@@ -23,11 +23,7 @@ import read_cases
 import plotly.graph_objects as go
 
 
-
-def generate_chart():
-    sdf = read_cases.read_df()
-    (daily, total) = read_cases.clean_data(sdf, days = 30*4)
-
+def generate_chart(sdf):
     # https://github.com/d3/d3-3.x-api-reference/blob/master/Formatting.md#d3_format
     cases = go.Bar(x=daily['date'], y=daily['cases'], name="Cases/day", marker_color="#f09665", hoverinfo="all")
     avg   = go.Scatter(x=daily['date'], y=daily['avg'], name="7 day avg", marker_color="#671d85")
@@ -42,7 +38,14 @@ def generate_chart():
     return fig
 
 if __name__ == '__main__':
-    fig = generate_chart()
+
+    sdf = read_cases.read_daily_df
+
+    sdf = read_cases.read_cases_df()
+    (daily, total) = read_cases.clean_data(sdf, days = 30*4)
+
+
+    fig = generate_chart(sdf)
     
     try:
         fig.write_html(sys.argv[1])

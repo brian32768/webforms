@@ -32,21 +32,24 @@ services:
       # This allows writing updated CSV files directly into the nginx "capacity" docker
       # from the csv_export.py script.
       - "/home/gis/docker/capacity/html/cases:/srv/cases:rw"
-    ports:
-      - 5000:5000
     user: app
     networks:
       proxy_net:
         aliases:
           - webforms
-    # Swarm deployment
-    deploy:
-      mode: global
-      restart_policy:
-        condition: any
-        delay: 5s
-        window: 15s
-        max_attempts: 10
+    # proxy will not work without this
+    ports:
+      - "5000:5000"
+    # for docker-compose
+    restart: unless-stopped
+    # Swarm deployment, which does not work yet
+    #deploy:
+    #  mode: global
+    #  restart_policy:
+    #    condition: any
+    #    delay: 5s
+    #    window: 15s
+    #    max_attempts: 10
 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/"]

@@ -17,9 +17,12 @@ to see how it is set up.
     PORTAL_USER     = os.environ.get('PORTAL_USER')
     PORTAL_PASSWORD = os.environ.get('PORTAL_PASSWORD')
 
-    COVID_CASES_URL = os.environ.get('COVID_CASES_URL')
-    PPE_INVENTORY_URL = os.environ.get('PPE_INVENTORY_URL')
-   
+    COVID_CASES_URL   = "https://delta.co.clatsop.or.us/server/rest/services/COVID19/covid19_cases/FeatureServer/0"
+    PUBLIC_WEEKLY_URL = "https://delta.co.clatsop.or.us/server/rest/services/covid19_public_weekly_data/FeatureServer/0"
+    PPE_INVENTORY_URL = "https://delta.co.clatsop.or.us/server/rest/services/COVID19/covid19_ppe_inventory/FeatureServer/0"
+
+    COVID_DAILY_CASES_URL = "https://services8.arcgis.com/l89P2qlKPxgrFDLw/arcgis/rest/services/covid_cases_current_day/FeatureServer/0"
+
     pass
 
     @staticmethod

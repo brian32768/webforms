@@ -4,7 +4,7 @@
 # 
 import pandas as pd
 from arcgis.gis import GIS
-from arcgis.features import FeatureLayer
+from arcgis.features import FeatureLayer, Table
 import arcgis.features
 import pytz
 from datetime import datetime, timezone, timedelta
@@ -27,15 +27,21 @@ def utc2localdate(utc_naive):
     #rval = p.strftime('%m/%d/%y')
     #return p
 
-def connect(layername):
-    layer = None
-    portal = GIS(Config.PORTAL_URL, Config.PORTAL_USER, Config.PORTAL_PASSWORD)
-    #print("Logged in as " + str(portal.properties.user.username))
-    layer = FeatureLayer(layername, portal)
-    return layer
+def read_daily_cases_df():
+    gis = GIS() # This is publicly accessible so no login, right?
+    table = Table(Config.COVID_DAILY_CASES_URL, gis)
+    df = table.query(where="1=1", out_fields="*").df
+    del table
 
-def read_df():
-    layer = connect(Config.COVID_CASES_URL)
+    ts = int(df.iloc[0]['date'] / 1000) # convert from mS
+    date = datetime.fromtimestamp(ts, timezone.utc).date()
+    df['date'] = date
+    return df
+
+def read_local_cases_df():
+    gis = GIS(Config.PORTAL_URL, Config.PORTAL_USER, Config.PORTAL_PASSWORD)
+    layer = FeatureLayer(Config.COVID_CASES_URL, gis)
+
     sdf = pd.DataFrame.spatial.from_layer(layer)
     del layer
     df = sdf[sdf.editor == 'EMD'] # Just Clatsop County
@@ -77,17 +83,27 @@ def clean_data(sdf, days):
 
     return (daily_df.reset_index(), total_df.reset_index())
 
-def read_cases(days):
-    sdf = read_df()
+def read_local_cases(days):
+    sdf = read_local_cases_df()
     return clean_data(sdf, days)
+
 
 # ==================================================================================
 
-if __name__ == "__main__":
-    
-    days = 6 * 7
+# This is a unit test, it does no real work.
 
-    (daily_df, total_df) = read_cases(days)
+if __name__ == "__main__":
+
+    # Read the new, one row table.
+    df = read_daily_cases_df()
+    assert len(df)==1
+    print(df)
+
+    # Read the accumulative many row table
+    # If we have not entered today's data then days=1 will fail
+    days = 4
+
+    (daily_df, total_df) = read_local_cases(days)
     assert len(daily_df)>0
     assert len(total_df)>0
 
