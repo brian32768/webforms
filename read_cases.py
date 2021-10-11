@@ -30,13 +30,12 @@ def utc2localdate(utc_naive):
 def read_daily_cases_df():
     gis = GIS() # This is publicly accessible so no login, right?
     table = Table(Config.COVID_DAILY_CASES_URL, gis)
-    df = table.query(where="1=1", out_fields="*").df
+    sdf = table.query(where="1=1", out_fields="*").sdf
     del table
-
-    ts = int(df.iloc[0]['date'] / 1000) # convert from mS
-    date = datetime.fromtimestamp(ts, timezone.utc).date()
-    df['date'] = date
-    return df
+#    ts = int(sdf.iloc[0]['date'] / 1000) # convert from mS
+#    date = datetime.fromtimestamp(ts, timezone.utc).date()
+#    df['date'] = date
+    return sdf
 
 def read_local_cases_df():
     gis = GIS(Config.PORTAL_URL, Config.PORTAL_USER, Config.PORTAL_PASSWORD)
