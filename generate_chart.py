@@ -39,11 +39,11 @@ def generate_chart(sdf):
 
 if __name__ == '__main__':
 
-    sdf = read_cases.read_daily_df
+    sdf = read_cases.read_daily_cases_df()
+    print(sdf)
 
-    sdf = read_cases.read_cases_df()
+    sdf = read_cases.read_local_cases_df()
     (daily, total) = read_cases.clean_data(sdf, days = 30*4)
-
 
     fig = generate_chart(sdf)
     
