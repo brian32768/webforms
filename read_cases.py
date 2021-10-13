@@ -13,21 +13,21 @@ from config import Config
 tformat = "%Y-%m-%d %H:%M"
 pactz = pytz.timezone('America/Los_Angeles')
 
-def utc2localdate(utc_naive):
-    """ input: timestamp from dataframe in utc, "YYYY-MM-DD HH:MM:SS"
-        output: string in local time, same format """
+def utc2localdatetime(naive):
+    """ input: naive utc timestamp from dataframe
+        output: timestamp in local tz """
 
-    # I'm not sure but maybe I should just set tzinfo here too??
-    # tzinfo = timezone.utc
-    #return t.astimezone(timezone.utc).replace(microsecond=0, second=0)
-    utc = utc_naive.tz_localize(timezone.utc)
-    #print('utc=', utc, type(utc))
-    # We're only interested in the date
-    return utc.astimezone(pactz).date()
-    #rval = p.strftime('%m/%d/%y')
-    #return p
+    #print("naive=", naive)
 
-def read_daily_cases_df():
+    utc = naive.tz_localize(timezone.utc)
+    #print('utc=', utc)
+
+    pac = utc.astimezone(pactz)
+    #print('pac=', pac)
+
+    return pac
+
+def read_current_cases_df():
     gis = GIS() # This is publicly accessible so no login, right?
     table = Table(Config.COVID_DAILY_CASES_URL, gis)
     sdf = table.query(where="1=1", out_fields="*").sdf
@@ -40,21 +40,23 @@ def read_daily_cases_df():
 def read_local_cases_df():
     gis = GIS(Config.PORTAL_URL, Config.PORTAL_USER, Config.PORTAL_PASSWORD)
     layer = FeatureLayer(Config.COVID_CASES_URL, gis)
-
+    # Be careful, Esri 'where' clauses are very broken.
+    # It would be elegant if they worked but, they don't.
+    #sdf = layer.query(where="name=='Clatsop'", out_fields="*").sdf
     sdf = pd.DataFrame.spatial.from_layer(layer)
-    del layer
-    df = sdf[sdf.editor == 'EMD'] # Just Clatsop County
+    df = sdf[(sdf['name']=='Clatsop') & (sdf['source']!='worldometer') & (sdf['source']!='OHA')]
     #print(df)
     return df
 
-def clean_data(sdf, days):
+def crunch_data(sdf, days):
     """ Return two df's, one for total cases and one for daily cases. """
 
     # Convert to localtime
     # see https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
     date = []
-    for utc_naive in sdf.loc[:, 'utc_date']:
-        date.append(utc2localdate(utc_naive))
+    for utc_naive in sdf.loc[:, 'last_update']:
+        # using date() here to toss out the time of day.
+        date.append(utc2localdatetime(utc_naive).date())
     sdf['date'] = date
 
     if days > 0:
@@ -82,10 +84,6 @@ def clean_data(sdf, days):
 
     return (daily_df.reset_index(), total_df.reset_index())
 
-def read_local_cases(days):
-    sdf = read_local_cases_df()
-    return clean_data(sdf, days)
-
 
 # ==================================================================================
 
@@ -93,20 +91,28 @@ def read_local_cases(days):
 
 if __name__ == "__main__":
 
-    # Read the new, one row table.
-    df = read_daily_cases_df()
-    assert len(df)==1
-    print(df)
+    # Read the accumulative table of many rows
+    days = 10
 
-    # Read the accumulative many row table
-    # If we have not entered today's data then days=1 will fail
-    days = 4
+    sdf = read_local_cases_df()
+    last = sdf.sort_values("utc_date", ascending=False).iloc[0]
 
-    (daily_df, total_df) = read_local_cases(days)
+    (daily_df, total_df) = crunch_data(sdf, days)
     assert len(daily_df)>0
     assert len(total_df)>0
 
-    print(daily_df)
-    print(total_df)
+    print(daily_df.sort_values('date',ascending=False).iloc[0])
+    print(total_df.sort_values('date',ascending=False).iloc[0])
+
+    # Read the new, one row table.
+    df = read_current_cases_df()
+    assert len(df)==1
+    current = df.iloc[0]
+
+    print(last['new_cases'], current['new_cases'])
+    print(last['total_cases'], current['total_cases'])
+    dailytime = current['date']
+    print(last['last_update'], dailytime)
+
 
 # That's all!
