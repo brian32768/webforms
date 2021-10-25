@@ -61,10 +61,11 @@ def crunch_data(sdf, days):
 
     if days > 0:
         start_date = datetime.utcnow() - timedelta(days)
-        df = sdf[sdf['last_update'] >= start_date].set_index('date')
-    else:
-        df = sdf.set_index('date')
+        df = sdf[sdf['last_update'] >= start_date]
 
+    df = df.set_index('date')
+    df = df.sort_values("utc_date", ascending=True)
+            
     # Get rid of everything but the time and count.
     keepers = ['date', 'new_cases']
     daily_df = df.filter(items=keepers)
