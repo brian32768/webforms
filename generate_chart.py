@@ -86,18 +86,25 @@ Returns True if the database was updated
 
 if __name__ == '__main__':
 
+    #date_field = 'last_update'
+    #utc = False
+
+    date_field = 'utc_date'
+    utc = True
+
     local_sdf = read_cases.read_local_cases_df()
 
     current = read_cases.read_current_cases_df().iloc[0]
     print("Current data")
     print(current)
-    last = local_sdf.sort_values("utc_date", ascending=False).iloc[0]
+
+    last = local_sdf.sort_values(date_field, ascending=False).iloc[0]
     if update_database(current, last):
         # Update happened so read the data again
         local_sdf = read_cases.read_local_cases_df()
 
     days = 4*30
-    (daily_df, total_df) = read_cases.crunch_data(local_sdf, days)
+    (daily_df, total_df) = read_cases.crunch_data(local_sdf, date_field, days, utc=utc)
     fig = generate_chart(daily_df)
    
     try:
