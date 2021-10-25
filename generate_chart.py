@@ -62,6 +62,8 @@ Returns True if the database was updated
 
     print("Appending the new record.")
 
+    #return False
+
     attributes = {
         "utc_date": datetime.utcnow(),
         "last_update": current.date,
